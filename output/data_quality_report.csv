@@ -1,0 +1,13 @@
+category,check_name,records_evaluated,issue_count,status,description
+Completeness,null_or_blank_values,375000,0,PASSED,Evaluates missing or null cell values across all raw columns
+Uniqueness,exact_duplicate_rows,25000,345,WARNING,Identifies 100% identical duplicate rows in source dataset
+Uniqueness,duplicate_order_line_keys,25000,345,WARNING,"Identifies collisions on composite primary key (order_id, order_line_item)"
+Validity,invalid_date_format,25000,0,PASSED,Validates parseable ISO date formats for order_date
+Validity,negative_quantity,25000,0,PASSED,Ensures quantity ordered is non-negative
+Validity,negative_unit_price,25000,0,PASSED,Ensures catalog unit prices are non-negative
+Validity,negative_store_discount,25000,0,PASSED,Ensures promotional store discounts are non-negative
+Business Rule,negative_payment_gateway_discount,25000,505,WARNING,Identifies negative payment gateway discounts (merchant gateway surcharge)
+Business Rule,negative_amount_paid,25000,2,WARNING,Identifies negative amount_paid (credit notes / refund adjustments)
+Financial Reconciliation,price_calculation_variance,24655,555,WARNING,Identifies variances between recorded amount_paid and formula > INR 0.01
+Referential Consistency,distinct_store_codes,25000,0,PASSED,Verified presence of 8 unique retail stores
+Referential Consistency,distinct_product_skus,25000,0,PASSED,Verified presence of 13 unique product SKUs

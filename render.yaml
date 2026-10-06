@@ -1,0 +1,22 @@
+services:
+  # Web Service hosting the interactive FastAPI dashboard & analytical endpoints
+  - type: web
+    name: retail-etl-pipeline
+    env: python
+    region: oregon
+    plan: free
+    buildCommand: pip install -r requirements.txt
+    startCommand: uvicorn api.index:app --host 0.0.0.0 --port $PORT
+    envVars:
+      - key: PYTHON_VERSION
+        value: 3.12.0
+      - key: PORT
+        value: 10000
+
+databases:
+  # Optional managed PostgreSQL database on Render
+  - name: retail-db
+    databaseName: retail_etl
+    user: postgres
+    region: oregon
+    plan: free

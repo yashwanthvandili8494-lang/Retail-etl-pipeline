@@ -12,9 +12,8 @@ __pycache__/
 venv/
 ENV/
 
-# Output data files (keep directory tracked)
-output/*.csv
-!output/.gitkeep
+# Output data files (tracked for auditability and web dashboard deployment)
+# output/*.csv
 
 # IDE / OS files
 .vscode/
