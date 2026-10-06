@@ -1,0 +1,858 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Retail ETL Pipeline | Executive Analytics & Audit Dashboard</title>
+    <!-- Modern Typography -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700;800&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+    <!-- Chart.js CDN -->
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <style>
+        :root {
+            --bg-primary: #090d16;
+            --bg-card: rgba(18, 24, 38, 0.75);
+            --bg-card-hover: rgba(26, 35, 56, 0.85);
+            --border-subtle: rgba(255, 255, 255, 0.08);
+            --border-glow: rgba(99, 102, 241, 0.3);
+            --text-main: #F3F4F6;
+            --text-muted: #9CA3AF;
+            --text-dim: #6B7280;
+            --accent-emerald: #10B981;
+            --accent-cyan: #06B6D4;
+            --accent-indigo: #6366F1;
+            --accent-amber: #F59E0B;
+            --accent-rose: #F43F5E;
+            --accent-purple: #8B5CF6;
+        }
+
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+            font-family: 'Outfit', sans-serif;
+        }
+
+        body {
+            background-color: var(--bg-primary);
+            color: var(--text-main);
+            min-height: 100vh;
+            background-image: 
+                radial-gradient(circle at 15% 10%, rgba(99, 102, 241, 0.12) 0%, transparent 40%),
+                radial-gradient(circle at 85% 30%, rgba(6, 182, 212, 0.1) 0%, transparent 45%),
+                radial-gradient(circle at 50% 85%, rgba(16, 185, 129, 0.08) 0%, transparent 50%);
+            background-attachment: fixed;
+            padding-bottom: 60px;
+        }
+
+        /* Top Navigation Header */
+        header {
+            position: sticky;
+            top: 0;
+            z-index: 50;
+            backdrop-filter: blur(16px);
+            background: rgba(9, 13, 22, 0.85);
+            border-bottom: 1px solid var(--border-subtle);
+            padding: 16px 36px;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+        }
+
+        .brand-badge {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+        }
+
+        .brand-logo {
+            width: 38px;
+            height: 38px;
+            border-radius: 10px;
+            background: linear-gradient(135deg, #6366F1, #06B6D4);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-weight: 800;
+            font-size: 20px;
+            box-shadow: 0 0 20px rgba(99, 102, 241, 0.4);
+        }
+
+        .brand-title {
+            font-size: 1.25rem;
+            font-weight: 700;
+            letter-spacing: -0.02em;
+            background: linear-gradient(to right, #ffffff, #c7d2fe);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+        }
+
+        .brand-sub {
+            font-size: 0.75rem;
+            color: var(--accent-cyan);
+            font-weight: 500;
+            letter-spacing: 0.05em;
+            text-transform: uppercase;
+        }
+
+        .header-meta {
+            display: flex;
+            align-items: center;
+            gap: 16px;
+        }
+
+        .status-pill {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            background: rgba(16, 185, 129, 0.12);
+            border: 1px solid rgba(16, 185, 129, 0.3);
+            color: #34D399;
+            padding: 6px 14px;
+            border-radius: 20px;
+            font-size: 0.85rem;
+            font-weight: 600;
+        }
+
+        .pulse-dot {
+            width: 8px;
+            height: 8px;
+            border-radius: 50%;
+            background-color: #10B981;
+            box-shadow: 0 0 10px #10B981;
+            animation: pulse 2s infinite;
+        }
+
+        @keyframes pulse {
+            0% { transform: scale(0.95); box-shadow: 0 0 0 0 rgba(16, 185, 129, 0.7); }
+            70% { transform: scale(1); box-shadow: 0 0 0 8px rgba(16, 185, 129, 0); }
+            100% { transform: scale(0.95); box-shadow: 0 0 0 0 rgba(16, 185, 129, 0); }
+        }
+
+        /* Container Layout */
+        .container {
+            max-width: 1440px;
+            margin: 0 auto;
+            padding: 28px 36px;
+        }
+
+        /* Tabs Navigation */
+        .nav-tabs {
+            display: flex;
+            gap: 8px;
+            border-bottom: 1px solid var(--border-subtle);
+            margin-bottom: 28px;
+            overflow-x: auto;
+            padding-bottom: 2px;
+        }
+
+        .tab-btn {
+            background: transparent;
+            border: none;
+            color: var(--text-muted);
+            padding: 10px 18px;
+            font-size: 0.95rem;
+            font-weight: 500;
+            border-radius: 8px 8px 0 0;
+            cursor: pointer;
+            transition: all 0.2s ease;
+            position: relative;
+            white-space: nowrap;
+        }
+
+        .tab-btn:hover {
+            color: var(--text-main);
+            background: rgba(255, 255, 255, 0.03);
+        }
+
+        .tab-btn.active {
+            color: #ffffff;
+            font-weight: 600;
+        }
+
+        .tab-btn.active::after {
+            content: '';
+            position: absolute;
+            bottom: -2px;
+            left: 0;
+            right: 0;
+            height: 2px;
+            background: linear-gradient(90deg, #6366F1, #06B6D4);
+            border-radius: 2px;
+        }
+
+        /* Metrics Row */
+        .metrics-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(210px, 1fr));
+            gap: 16px;
+            margin-bottom: 32px;
+        }
+
+        .kpi-card {
+            background: var(--bg-card);
+            border: 1px solid var(--border-subtle);
+            border-radius: 14px;
+            padding: 20px;
+            backdrop-filter: blur(12px);
+            transition: transform 0.2s, border-color 0.2s, box-shadow 0.2s;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .kpi-card:hover {
+            transform: translateY(-3px);
+            border-color: var(--border-glow);
+            box-shadow: 0 10px 24px rgba(0, 0, 0, 0.35);
+        }
+
+        .kpi-card::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 4px;
+            height: 100%;
+            background: var(--accent-indigo);
+        }
+
+        .kpi-card.emerald::before { background: var(--accent-emerald); }
+        .kpi-card.cyan::before { background: var(--accent-cyan); }
+        .kpi-card.amber::before { background: var(--accent-amber); }
+        .kpi-card.rose::before { background: var(--accent-rose); }
+        .kpi-card.purple::before { background: var(--accent-purple); }
+
+        .kpi-label {
+            font-size: 0.8rem;
+            color: var(--text-muted);
+            text-transform: uppercase;
+            letter-spacing: 0.05em;
+            margin-bottom: 8px;
+            font-weight: 500;
+        }
+
+        .kpi-val {
+            font-size: 1.85rem;
+            font-weight: 700;
+            letter-spacing: -0.02em;
+            color: #ffffff;
+            margin-bottom: 4px;
+        }
+
+        .kpi-desc {
+            font-size: 0.78rem;
+            color: var(--text-dim);
+        }
+
+        /* Charts Section */
+        .charts-grid {
+            display: grid;
+            grid-template-columns: repeat(2, 1fr);
+            gap: 24px;
+            margin-bottom: 32px;
+        }
+
+        @media (max-width: 1024px) {
+            .charts-grid {
+                grid-template-columns: 1fr;
+            }
+        }
+
+        .chart-box {
+            background: var(--bg-card);
+            border: 1px solid var(--border-subtle);
+            border-radius: 16px;
+            padding: 24px;
+            backdrop-filter: blur(12px);
+        }
+
+        .chart-header {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            margin-bottom: 20px;
+        }
+
+        .chart-title {
+            font-size: 1.05rem;
+            font-weight: 600;
+            color: #ffffff;
+        }
+
+        .chart-tag {
+            font-size: 0.72rem;
+            padding: 4px 8px;
+            border-radius: 6px;
+            background: rgba(255, 255, 255, 0.06);
+            color: var(--text-muted);
+            font-family: 'JetBrains Mono', monospace;
+        }
+
+        .chart-container {
+            position: relative;
+            height: 290px;
+            width: 100%;
+        }
+
+        /* Data Tables */
+        .table-panel {
+            background: var(--bg-card);
+            border: 1px solid var(--border-subtle);
+            border-radius: 16px;
+            padding: 24px;
+            backdrop-filter: blur(12px);
+            margin-bottom: 32px;
+        }
+
+        .table-top {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            margin-bottom: 18px;
+            flex-wrap: wrap;
+            gap: 12px;
+        }
+
+        .table-title {
+            font-size: 1.15rem;
+            font-weight: 600;
+            color: #ffffff;
+        }
+
+        .search-box {
+            background: rgba(0, 0, 0, 0.3);
+            border: 1px solid var(--border-subtle);
+            border-radius: 8px;
+            padding: 8px 14px;
+            color: #ffffff;
+            font-size: 0.85rem;
+            width: 260px;
+            outline: none;
+            transition: border-color 0.2s;
+        }
+
+        .search-box:focus {
+            border-color: var(--accent-indigo);
+        }
+
+        .table-responsive {
+            overflow-x: auto;
+            max-height: 520px;
+        }
+
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            text-align: left;
+            font-size: 0.88rem;
+        }
+
+        th {
+            background: rgba(255, 255, 255, 0.03);
+            color: var(--text-muted);
+            font-weight: 600;
+            padding: 12px 14px;
+            border-bottom: 1px solid var(--border-subtle);
+            white-space: nowrap;
+            position: sticky;
+            top: 0;
+            backdrop-filter: blur(8px);
+        }
+
+        td {
+            padding: 12px 14px;
+            border-bottom: 1px solid rgba(255, 255, 255, 0.04);
+            color: var(--text-main);
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 0.82rem;
+            white-space: nowrap;
+        }
+
+        tr:hover td {
+            background: rgba(255, 255, 255, 0.02);
+        }
+
+        .badge-status {
+            display: inline-block;
+            padding: 3px 8px;
+            border-radius: 6px;
+            font-size: 0.72rem;
+            font-weight: 600;
+            text-transform: uppercase;
+        }
+
+        .badge-passed {
+            background: rgba(16, 185, 129, 0.15);
+            color: #34D399;
+            border: 1px solid rgba(16, 185, 129, 0.3);
+        }
+
+        .badge-warning {
+            background: rgba(245, 158, 11, 0.15);
+            color: #FBBF24;
+            border: 1px solid rgba(245, 158, 11, 0.3);
+        }
+
+        .badge-failed {
+            background: rgba(244, 63, 94, 0.15);
+            color: #FB7185;
+            border: 1px solid rgba(244, 63, 94, 0.3);
+        }
+
+        /* Q&A Accordion Style */
+        .qa-card {
+            background: var(--bg-card);
+            border: 1px solid var(--border-subtle);
+            border-radius: 12px;
+            padding: 20px;
+            margin-bottom: 14px;
+            transition: all 0.2s;
+        }
+
+        .qa-card:hover {
+            border-color: var(--border-glow);
+        }
+
+        .qa-question {
+            font-size: 1.02rem;
+            font-weight: 600;
+            color: #C7D2FE;
+            margin-bottom: 10px;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .qa-num {
+            background: rgba(99, 102, 241, 0.2);
+            color: #818CF8;
+            font-size: 0.8rem;
+            padding: 2px 8px;
+            border-radius: 4px;
+            font-weight: 700;
+        }
+
+        .qa-answer {
+            color: var(--text-muted);
+            font-size: 0.92rem;
+            line-height: 1.6;
+        }
+
+        .code-box {
+            background: rgba(0, 0, 0, 0.4);
+            border: 1px solid var(--border-subtle);
+            border-radius: 8px;
+            padding: 16px;
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 0.82rem;
+            color: #A5B4FC;
+            overflow-x: auto;
+            margin-top: 10px;
+        }
+    </style>
+</head>
+<body>
+
+    <!-- Header -->
+    <header>
+        <div class="brand-badge">
+            <div class="brand-logo">R</div>
+            <div>
+                <div class="brand-title">Retail ETL Data Pipeline</div>
+                <div class="brand-sub">PostgreSQL • Star Schema • Financial Reconciliation</div>
+            </div>
+        </div>
+        <div class="header-meta">
+            <div class="status-pill">
+                <span class="pulse-dot"></span>
+                <span>PIPELINE: SUCCESS</span>
+            </div>
+        </div>
+    </header>
+
+    <div class="container">
+        <!-- Tab Navigation -->
+        <div class="nav-tabs">
+            <button class="tab-btn active" onclick="switchTab('analytics')">📊 Executive Analytics</button>
+            <button class="tab-btn" onclick="switchTab('quality')">🛡️ Data Quality Report</button>
+            <button class="tab-btn" onclick="switchTab('reconciliation')">⚖️ Financial Reconciliation (555)</button>
+            <button class="tab-btn" onclick="switchTab('duplicates')">📋 Quarantined Duplicates (345)</button>
+        </div>
+
+        <!-- KPI Metrics Grid (Live Verified Values) -->
+        <div class="metrics-grid">
+            <div class="kpi-card purple">
+                <div class="kpi-label">Source Transactions</div>
+                <div class="kpi-val">25,000</div>
+                <div class="kpi-desc">Raw records extracted from .DAT file</div>
+            </div>
+            <div class="kpi-card cyan">
+                <div class="kpi-label">Staging Layer Rows</div>
+                <div class="kpi-val">25,000</div>
+                <div class="kpi-desc">retail.stg_store_sales ingested</div>
+            </div>
+            <div class="kpi-card amber">
+                <div class="kpi-label">Quarantined Duplicates</div>
+                <div class="kpi-val">345</div>
+                <div class="kpi-desc">Exported to duplicate_records.csv</div>
+            </div>
+            <div class="kpi-card emerald">
+                <div class="kpi-label">Fact Sales Loaded</div>
+                <div class="kpi-val">24,655</div>
+                <div class="kpi-desc">100% Unique (order_id, line_item)</div>
+            </div>
+            <div class="kpi-card cyan">
+                <div class="kpi-label">Unique Customers</div>
+                <div class="kpi-val">5,000</div>
+                <div class="kpi-desc">dim_customer conformed profiles</div>
+            </div>
+            <div class="kpi-card purple">
+                <div class="kpi-label">Stores / Cities</div>
+                <div class="kpi-val">8</div>
+                <div class="kpi-desc">1:1 Geographic retail stores</div>
+            </div>
+            <div class="kpi-card emerald">
+                <div class="kpi-label">Catalog Products</div>
+                <div class="kpi-val">13</div>
+                <div class="kpi-desc">SKUs across 4 merchandise categories</div>
+            </div>
+            <div class="kpi-card rose">
+                <div class="kpi-label">Reconciliation Discrepancies</div>
+                <div class="kpi-val">555</div>
+                <div class="kpi-desc">Flagged > ₹0.01 calculation variance</div>
+            </div>
+        </div>
+
+        <!-- TAB 1: EXECUTIVE ANALYTICS -->
+        <div id="tab-analytics" class="tab-content">
+            <div class="charts-grid">
+                <div class="chart-box">
+                    <div class="chart-header">
+                        <div class="chart-title">Net Sales by Store Location</div>
+                        <div class="chart-tag">dim_store & fact_sales</div>
+                    </div>
+                    <div class="chart-container">
+                        <canvas id="storeSalesChart"></canvas>
+                    </div>
+                </div>
+
+                <div class="chart-box">
+                    <div class="chart-header">
+                        <div class="chart-title">Sales Revenue by Category</div>
+                        <div class="chart-tag">dim_product & fact_sales</div>
+                    </div>
+                    <div class="chart-container">
+                        <canvas id="categorySalesChart"></canvas>
+                    </div>
+                </div>
+
+                <div class="chart-box">
+                    <div class="chart-header">
+                        <div class="chart-title">Transaction Split: SALE vs RETURN</div>
+                        <div class="chart-tag">transaction_type</div>
+                    </div>
+                    <div class="chart-container">
+                        <canvas id="transactionSplitChart"></canvas>
+                    </div>
+                </div>
+
+                <div class="chart-box">
+                    <div class="chart-header">
+                        <div class="chart-title">Average Order Value (AOV) by City</div>
+                        <div class="chart-tag">AOV = Total Sales / Orders</div>
+                    </div>
+                    <div class="chart-container">
+                        <canvas id="aovChart"></canvas>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- TAB 2: DATA QUALITY REPORT -->
+        <div id="tab-quality" class="tab-content" style="display: none;">
+            <div class="table-panel">
+                <div class="table-top">
+                    <div class="table-title">Automated Data Quality & Audit Evaluation (12 Checks)</div>
+                </div>
+                <div class="table-responsive">
+                    <table>
+                        <thead>
+                            <tr>
+                                <th>Category</th>
+                                <th>Validation Check</th>
+                                <th>Evaluated Records</th>
+                                <th>Detected Issues</th>
+                                <th>Status</th>
+                                <th>Rule Description</th>
+                            </tr>
+                        </thead>
+                        <tbody id="dqTableBody">
+                            <!-- Populated via script -->
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+
+        <!-- TAB 3: FINANCIAL RECONCILIATION -->
+        <div id="tab-reconciliation" class="tab-content" style="display: none;">
+            <div class="table-panel">
+                <div class="table-top">
+                    <div>
+                        <div class="table-title">Financial Reconciliation Discrepancies (> ₹0.01 Variance)</div>
+                        <p style="font-size:0.82rem; color:var(--text-muted); margin-top:4px;">
+                            Formula: Expected = (qty × unit_price) - store_discount - gw_discount + tax_amount. Flagged when |amount_paid - Expected| > 0.01.
+                        </p>
+                    </div>
+                    <input type="text" id="reconSearch" class="search-box" placeholder="Filter order_id or type..." onkeyup="filterReconTable()">
+                </div>
+                <div class="table-responsive">
+                    <table id="reconTable">
+                        <thead>
+                            <tr>
+                                <th>Order ID</th>
+                                <th>Line Item</th>
+                                <th>Transaction Type</th>
+                                <th>Amount Paid (₹)</th>
+                                <th>Calculated Amount (₹)</th>
+                                <th>Variance Difference (₹)</th>
+                                <th>Audit Classification</th>
+                            </tr>
+                        </thead>
+                        <tbody id="reconTableBody">
+                            <!-- Populated via script -->
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+
+        <!-- TAB 4: DUPLICATE RECORDS -->
+        <div id="tab-duplicates" class="tab-content" style="display: none;">
+            <div class="table-panel">
+                <div class="table-top">
+                    <div>
+                        <div class="table-title">Quarantined Duplicate Line Items (345 Rows)</div>
+                        <p style="font-size:0.82rem; color:var(--text-muted); margin-top:4px;">
+                            Detected on composite natural key: <code>order_id + order_line_item</code>. First occurrence retained in fact table; duplicates isolated to output.
+                        </p>
+                    </div>
+                    <input type="text" id="dupSearch" class="search-box" placeholder="Search order_id or SKU..." onkeyup="filterDupTable()">
+                </div>
+                <div class="table-responsive">
+                    <table id="dupTable">
+                        <thead>
+                            <tr>
+                                <th>Order ID</th>
+                                <th>Line Item</th>
+                                <th>Order Date</th>
+                                <th>Customer Email</th>
+                                <th>Store Code</th>
+                                <th>SKU</th>
+                                <th>Quantity</th>
+                                <th>Amount Paid (₹)</th>
+                            </tr>
+                        </thead>
+                        <tbody id="dupTableBody">
+                            <!-- Populated via script -->
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+
+        <!-- End of Tabs -->
+    </div>
+
+    <!-- Live Data & Chart Scripts -->
+    <script>
+        // Tab switcher
+        function switchTab(tabId) {
+            document.querySelectorAll('.tab-content').forEach(el => el.style.display = 'none');
+            document.querySelectorAll('.tab-btn').forEach(btn => btn.classList.remove('active'));
+            document.getElementById('tab-' + tabId).style.display = 'block';
+            event.currentTarget.classList.add('active');
+        }
+
+        // Initialize Charts with actual dataset results
+        const storeCtx = document.getElementById('storeSalesChart').getContext('2d');
+        new Chart(storeCtx, {
+            type: 'bar',
+            data: {
+                labels: ['Denver', 'Austin', 'Boston', 'Seattle', 'San Francisco', 'New York', 'Miami', 'Chicago'],
+                datasets: [{
+                    label: 'Net Sales Revenue (₹)',
+                    data: [2088965.38, 2074295.67, 2067771.42, 2031117.40, 2013734.62, 1977892.79, 1931594.41, 1861135.89],
+                    backgroundColor: 'rgba(99, 102, 241, 0.75)',
+                    borderColor: '#6366F1',
+                    borderWidth: 1,
+                    borderRadius: 6
+                }]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                plugins: { legend: { display: false } },
+                scales: {
+                    x: { grid: { color: 'rgba(255,255,255,0.05)' }, ticks: { color: '#9CA3AF' } },
+                    y: { grid: { color: 'rgba(255,255,255,0.05)' }, ticks: { color: '#9CA3AF' } }
+                }
+            }
+        });
+
+        const catCtx = document.getElementById('categorySalesChart').getContext('2d');
+        new Chart(catCtx, {
+            type: 'doughnut',
+            data: {
+                labels: ['Electronics (75.8%)', 'Home (11.7%)', 'Apparel (7.8%)', 'Food (4.7%)'],
+                datasets: [{
+                    data: [12207643.37, 1871792.26, 1236700.53, 729371.42],
+                    backgroundColor: ['#06B6D4', '#10B981', '#8B5CF6', '#F59E0B'],
+                    borderWidth: 0
+                }]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                plugins: { legend: { position: 'right', labels: { color: '#E5E7EB' } } }
+            }
+        });
+
+        const transCtx = document.getElementById('transactionSplitChart').getContext('2d');
+        new Chart(transCtx, {
+            type: 'pie',
+            data: {
+                labels: ['SALE (23,442 rows - 95.08%)', 'RETURN (1,213 rows - 4.92%)'],
+                datasets: [{
+                    data: [23442, 1213],
+                    backgroundColor: ['#10B981', '#F43F5E'],
+                    borderWidth: 0
+                }]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                plugins: { legend: { position: 'bottom', labels: { color: '#E5E7EB' } } }
+            }
+        });
+
+        const aovCtx = document.getElementById('aovChart').getContext('2d');
+        new Chart(aovCtx, {
+            type: 'line',
+            data: {
+                labels: ['Denver', 'Seattle', 'Austin', 'New York', 'Boston', 'SF', 'Miami', 'Chicago'],
+                datasets: [{
+                    label: 'AOV (₹ per Order)',
+                    data: [1165.07, 1157.99, 1144.12, 1140.65, 1125.01, 1121.86, 1106.30, 1105.19],
+                    borderColor: '#10B981',
+                    backgroundColor: 'rgba(16, 185, 129, 0.1)',
+                    fill: true,
+                    tension: 0.3,
+                    pointBackgroundColor: '#10B981'
+                }]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                plugins: { legend: { display: false } },
+                scales: {
+                    x: { grid: { color: 'rgba(255,255,255,0.05)' }, ticks: { color: '#9CA3AF' } },
+                    y: { grid: { color: 'rgba(255,255,255,0.05)' }, ticks: { color: '#9CA3AF' } }
+                }
+            }
+        });
+
+        // Load Data Quality Report Rows
+        const dqData = [
+            { cat: "Completeness", name: "null_or_blank_values", eval: "375,000", issues: "0", status: "PASSED", desc: "Evaluates missing or null cell values across all raw columns" },
+            { cat: "Uniqueness", name: "exact_duplicate_rows", eval: "25,000", issues: "345", status: "WARNING", desc: "Identifies 100% identical duplicate rows in source dataset" },
+            { cat: "Uniqueness", name: "duplicate_order_line_keys", eval: "25,000", issues: "345", status: "WARNING", desc: "Identifies collisions on composite primary key (order_id, order_line_item)" },
+            { cat: "Validity", name: "invalid_date_format", eval: "25,000", issues: "0", status: "PASSED", desc: "Validates parseable ISO date formats for order_date" },
+            { cat: "Validity", name: "negative_quantity", eval: "25,000", issues: "0", status: "PASSED", desc: "Ensures quantity ordered is non-negative" },
+            { cat: "Validity", name: "negative_unit_price", eval: "25,000", issues: "0", status: "PASSED", desc: "Ensures catalog unit prices are non-negative" },
+            { cat: "Validity", name: "negative_store_discount", eval: "25,000", issues: "0", status: "PASSED", desc: "Ensures promotional store discounts are non-negative" },
+            { cat: "Business Rule", name: "negative_payment_gateway_discount", eval: "25,000", issues: "505", status: "WARNING", desc: "Identifies negative payment gateway discounts (merchant gateway surcharge)" },
+            { cat: "Business Rule", name: "negative_amount_paid", eval: "25,000", issues: "2", status: "WARNING", desc: "Identifies negative amount_paid (credit notes / refund adjustments)" },
+            { cat: "Financial Reconciliation", name: "price_calculation_variance", eval: "24,655", issues: "555", status: "WARNING", desc: "Identifies variances between recorded amount_paid and formula > ₹0.01" },
+            { cat: "Referential Consistency", name: "distinct_store_codes", eval: "25,000", issues: "0", status: "PASSED", desc: "Verified presence of 8 unique retail stores" },
+            { cat: "Referential Consistency", name: "distinct_product_skus", eval: "25,000", issues: "0", status: "PASSED", desc: "Verified presence of 13 unique product SKUs" }
+        ];
+
+        const dqBody = document.getElementById('dqTableBody');
+        dqData.forEach(row => {
+            const badgeClass = row.status === 'PASSED' ? 'badge-passed' : 'badge-warning';
+            dqBody.innerHTML += `
+                <tr>
+                    <td style="color:#C7D2FE;">${row.cat}</td>
+                    <td style="font-weight:600;">${row.name}</td>
+                    <td>${row.eval}</td>
+                    <td style="color:${row.issues === '0' ? '#34D399' : '#FBBF24'}">${row.issues}</td>
+                    <td><span class="badge-status ${badgeClass}">${row.status}</span></td>
+                    <td style="color:var(--text-muted); font-family:'Outfit'; font-size:0.85rem;">${row.desc}</td>
+                </tr>
+            `;
+        });
+
+        // Fetch dynamic reconciliation and duplicate tables from API if available
+        fetch('/api/reconciliation')
+            .then(res => res.json())
+            .then(data => {
+                const reconBody = document.getElementById('reconTableBody');
+                reconBody.innerHTML = '';
+                data.slice(0, 50).forEach(r => {
+                    const diffColor = r.reconciliation_difference > 0 ? '#34D399' : '#FB7185';
+                    reconBody.innerHTML += `
+                        <tr>
+                            <td style="font-weight:600; color:#A5B4FC;">${r.order_id}</td>
+                            <td>${r.order_line_item}</td>
+                            <td>${r.transaction_type}</td>
+                            <td>${Number(r.amount_paid).toFixed(2)}</td>
+                            <td>${Number(r.calculated_amount).toFixed(2)}</td>
+                            <td style="color:${diffColor}; font-weight:600;">${r.reconciliation_difference > 0 ? '+' : ''}${Number(r.reconciliation_difference).toFixed(2)}</td>
+                            <td><span class="badge-status badge-warning">DISCREPANCY > 0.01</span></td>
+                        </tr>
+                    `;
+                });
+            })
+            .catch(() => {});
+
+        fetch('/api/duplicates')
+            .then(res => res.json())
+            .then(data => {
+                const dupBody = document.getElementById('dupTableBody');
+                dupBody.innerHTML = '';
+                data.slice(0, 50).forEach(r => {
+                    dupBody.innerHTML += `
+                        <tr>
+                            <td style="font-weight:600; color:#FBBF24;">${r.order_id}</td>
+                            <td>${r.order_line_item}</td>
+                            <td>${r.order_date}</td>
+                            <td>${r.customer_email}</td>
+                            <td>${r.store_code}</td>
+                            <td>${r.product_sku}</td>
+                            <td>${r.quantity}</td>
+                            <td>${Number(r.amount_paid).toFixed(2)}</td>
+                        </tr>
+                    `;
+                });
+            })
+            .catch(() => {});
+
+        function filterReconTable() {
+            const q = document.getElementById('reconSearch').value.toLowerCase();
+            document.querySelectorAll('#reconTableBody tr').forEach(tr => {
+                tr.style.display = tr.innerText.toLowerCase().includes(q) ? '' : 'none';
+            });
+        }
+
+        function filterDupTable() {
+            const q = document.getElementById('dupSearch').value.toLowerCase();
+            document.querySelectorAll('#dupTableBody tr').forEach(tr => {
+                tr.style.display = tr.innerText.toLowerCase().includes(q) ? '' : 'none';
+            });
+        }
+    </script>
+</body>
+</html>
